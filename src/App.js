@@ -99,27 +99,18 @@ var NoteSection = React.createClass({
     };
   },
 
-  componentWillMount: function() {
-    this.firebaseNotesRef = new Firebase('https://lostlandApp.firebaseio.com/notes/');
-    this.bindAsArray(this.firebaseNotesRef.limitToLast(25), 'notes');
-  },
-
   updateNoteList: function() {
     console.log('should update NoteList now!');
     console.log(this.props.track);
-    var albumMBID = this.props.track.mbid;
+    var albumMBID = this.props.track.album.mbid;
     console.log(albumMBID);
 
-    var firebaseRef = this.firebaseNotesRef.child(albumMBID);
+    // some albums don't have mbid
+    if(albumMBID === undefined || albumMBID === '') return;
 
-    firebaseRef.once('value', function(snap) {
-      if(snap.val() === null) {
-        this.firebaseNotesRef.set({albumMBID: {}});
-      }
-    });
+    var firebaseRef = new Firebase('https://lostlandApp.firebaseio.com/notes/' + albumMBID);
 
-    firebaseRef = this.firebaseNotesRef.child(albumMBID);
-
+    this.bindAsArray(firebaseRef.limitToLast(25), 'notes');
   },
 
   onChange: function(e) {
