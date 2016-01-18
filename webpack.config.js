@@ -22,7 +22,23 @@ module.exports = {
       loaders: ['react-hot', 'babel'],
       include: path.join(__dirname, 'src')
     }, {
-      test: /jquery\/src\/selector\.js$/, loader: 'amd-define-factory-patcher-loader'
+      test: /jquery\/src\/selector\.js$/,
+      loader: 'amd-define-factory-patcher-loader'
+    }, {
+      test: /\.scss$/,
+      loaders: ["style", "css", "sass"]
+    }, {
+      test: /\.woff(2)?(\?v=\d+\.\d+\.\d+)?$/,
+      loader: "url?limit=10000&mimetype=application/font-woff"
+    }, {
+      test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
+      loader: "url?limit=10000&mimetype=application/octet-stream"
+    }, {
+      test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
+      loader: "file"
+    }, {
+      test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
+      loader: "url?limit=10000&mimetype=image/svg+xml"
     }]
   }
 };
