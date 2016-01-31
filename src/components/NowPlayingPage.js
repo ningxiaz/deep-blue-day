@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import ReactFireMixin from 'reactfire';
 import Firebase from 'firebase';
+import classNames from 'classnames';
 
 var $ = require('jquery/src/core');
 require('jquery/src/ajax');
@@ -51,9 +52,17 @@ var NowPlayingPage = React.createClass({
 
   render: function() {
     return (
-      <div>
-        <NowPlayingTrack track={ this.state.currentTrack } />
-        <NoteSection ref="notes" track={ this.state.currentTrack } nowPlaying={ this.state.nowPlaying } />
+      <div className="container-fluid">
+        <div className="row">
+          <div className="col-md-12">
+            <NowPlayingTrack track={ this.state.currentTrack } />
+          </div>
+        </div>
+        <div className="row">
+          <div className="col-md-12">
+            <NoteSection ref="notes" track={ this.state.currentTrack } nowPlaying={ this.state.nowPlaying } />
+          </div>
+        </div>
       </div>
     );
   }
