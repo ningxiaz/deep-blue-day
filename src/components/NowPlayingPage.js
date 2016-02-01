@@ -58,12 +58,10 @@ var NowPlayingPage = React.createClass({
     return (
       <div className="container-fluid">
         <div className="row">
-          <div className="col-md-12">
+          <div className="col-md-4">
             <NowPlayingTrack track={ this.state.currentTrack } />
           </div>
-        </div>
-        <div className="row">
-          <div className="col-md-12">
+          <div className="col-md-8">
             <NoteSection ref="notes" track={ this.state.currentTrack } nowPlaying={ this.state.nowPlaying } />
           </div>
         </div>
@@ -74,8 +72,14 @@ var NowPlayingPage = React.createClass({
 
 var NowPlayingTrack = React.createClass({
   render: function() {
+    var imageSrc = this.props.track.image !== undefined ? this.props.track.image[this.props.track.image.length - 1]['#text'] : '';
     return (
-      <h1>{this.props.track.name}</h1>
+      <div>
+        <img src={ imageSrc } />
+        <h3>{this.props.track.name}</h3>
+        <h5>From {this.props.track.album['#text']}</h5>
+        <h6>By {this.props.track.artist['#text']}</h6>
+      </div>
     );
   }
 });
