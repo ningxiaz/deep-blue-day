@@ -6,10 +6,13 @@ import classNames from 'classnames';
 var $ = require('jquery/src/core');
 require('jquery/src/ajax');
 require('jquery/src/ajax/xhr');
+require('jquery/src/attributes');
 
 var lastfmBase = 'http://ws.audioscrobbler.com/2.0/';
 var lastfmKey = 'bd286e68d3aa369779ff55dfe15470b6';
 var lastfmUsername = 'thmmrs2298';
+
+var mbBase = 'http://musicbrainz.org/ws/2/';
 
 var NowPlayingPage = React.createClass({
   getInitialState: function() {
@@ -23,6 +26,7 @@ var NowPlayingPage = React.createClass({
     var _this = this;
 
     $.ajax({
+      type: 'GET',
       url: lastfmBase + '?method=user.getrecenttracks&user=' + lastfmUsername + '&api_key=' + lastfmKey + '&limit=5&format=json',
       dataType: 'json',
       cache: false,
@@ -103,15 +107,33 @@ var NoteSection = React.createClass({
   updateNoteList: function() {
     console.log('should update NoteList now!');
     console.log(this.props.track);
-    var albumMBID = this.props.track.album.mbid;
-    console.log(albumMBID);
+    var releaseGroupMBID;
 
-    // some albums don't have mbid
-    if(albumMBID === undefined || albumMBID === '') return;
+    // query musicbrainz to get the correct release group mbid
+    $.ajax({
+      type: 'GET',
+      url: mbBase + 'release-group/?query=releasegroup:' + this.props.track.album['#text'] + ' AND artist:' + this.props.track.artist['#text'],
+      dataType: 'xml',
+      cache: false,
+      success: function(xml) {
+        console.log(xml);
+        var matches = $(xml).find('release-group');
+        if(matches.length > 0) {
+          releaseGroupMBID = $(matches[0]).attr('id');
 
-    var firebaseRef = new Firebase('https://lostlandApp.firebaseio.com/notes/' + albumMBID);
+          console.log(releaseGroupMBID);
 
-    this.bindAsArray(firebaseRef.limitToLast(25), 'notes');
+          if (releaseGroupMBID !== undefined && releaseGroupMBID !== '') {
+            var firebaseRef = new Firebase('https://lostlandApp.firebaseio.com/notes/' + releaseGroupMBID);
+
+            this.bindAsArray(firebaseRef.limitToLast(25), 'notes');
+          }
+        }
+      }.bind(this),
+      error: function(xhr, status, err) {
+        console.error('musicbrainz search', status, err.toString());
+      }.bind(this)
+    });
   },
 
   onChange: function(e) {
