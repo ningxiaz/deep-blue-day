@@ -15,6 +15,8 @@ var lastfmUsername = 'thmmrs2298';
 var mbBase = 'http://musicbrainz.org/ws/2/';
 
 var NowPlayingPage = React.createClass({
+  intervalID: undefined,
+
   getInitialState: function() {
     return {
       nowPlaying: false,
@@ -23,6 +25,11 @@ var NowPlayingPage = React.createClass({
   },
 
   componentDidMount: function() {
+    this.updateTrack();
+    this.intervalID = setInterval(this.updateTrack, 10000);
+  },
+
+  updateTrack: function() {
     var _this = this;
 
     $.ajax({
@@ -37,10 +44,16 @@ var NowPlayingPage = React.createClass({
         tracks.forEach(function(track) {
           if(track.hasOwnProperty('@attr') && track['@attr']['nowplaying'] === 'true') {
             _this.setState({nowPlaying: true});
-            _this.setState({currentTrack: track});
 
-            // ask NoteSection to update itself
-            _this.refs['notes'].updateNoteList();
+            // check if a new song is playing
+            if(_this.state.currentTrack !== undefined && _this.state.currentTrack.url !== track.url) {
+              console.log('A new song is playing');
+              _this.setState({currentTrack: track});
+
+              // ask NoteSection to update itself
+              _this.refs['notes'].updateNoteList();
+            }
+
             return;
           }
         });
@@ -50,8 +63,10 @@ var NowPlayingPage = React.createClass({
         console.error('user.getrecenttracks', status, err.toString());
       }.bind(this)
     });
+  },
 
-
+  componentWillUnmount: function() {
+    clearInterval(this.intervalID);
   },
 
   render: function() {
@@ -73,12 +88,14 @@ var NowPlayingPage = React.createClass({
 var NowPlayingTrack = React.createClass({
   render: function() {
     var imageSrc = this.props.track.image !== undefined ? this.props.track.image[this.props.track.image.length - 1]['#text'] : '';
+    var albumName = this.props.track.album !== undefined ? this.props.track.album['#text'] : '';
+    var artistName = this.props.track.artist !== undefined ? this.props.track.artist['#text'] : '';
     return (
       <div>
         <img src={ imageSrc } />
-        <h3>{this.props.track.name}</h3>
-        <h5>From {this.props.track.album['#text']}</h5>
-        <h6>By {this.props.track.artist['#text']}</h6>
+        <h3>{ this.props.track.name }</h3>
+        <h5>From { albumName }</h5>
+        <h6>By { artistName }</h6>
       </div>
     );
   }
@@ -94,7 +111,13 @@ var NoteList = React.createClass({
         </li>
       );
     };
-    return <ul>{ this.props.notes.map(createItem) }</ul>;
+    if(this.props.notes !== undefined) {
+      return <ul>{ this.props.notes.map(createItem) }</ul>;
+    }
+    else {
+      return null;
+    }
+
   }
 });
 
@@ -103,6 +126,7 @@ var NoteSection = React.createClass({
 
   getInitialState: function() {
     return {
+      releaseGroupMBID: null,
       notes: [],
       newNote: ''
     };
@@ -111,7 +135,6 @@ var NoteSection = React.createClass({
   updateNoteList: function() {
     console.log('should update NoteList now!');
     console.log(this.props.track);
-    var releaseGroupMBID;
 
     // query musicbrainz to get the correct release group mbid
     $.ajax({
@@ -123,12 +146,21 @@ var NoteSection = React.createClass({
         console.log(xml);
         var matches = $(xml).find('release-group');
         if(matches.length > 0) {
-          releaseGroupMBID = $(matches[0]).attr('id');
+          var potentialNewMBID = $(matches[0]).attr('id');
 
-          console.log(releaseGroupMBID);
+          // if it's still the same album, do nothing
+          if(potentialNewMBID === this.state.releaseGroupMBID) return;
 
-          if (releaseGroupMBID !== undefined && releaseGroupMBID !== '') {
-            var firebaseRef = new Firebase('https://lostlandApp.firebaseio.com/notes/' + releaseGroupMBID);
+          this.setState({releaseGroupMBID: potentialNewMBID});
+          // this.state.releaseGroupMBID = $(matches[0]).attr('id');
+
+          console.log('releaseGroupMBID: ' + this.state.releaseGroupMBID);
+
+          if (this.state.releaseGroupMBID !== undefined && this.state.releaseGroupMBID !== '') {
+            // unbind previous reference, if any
+            if(this.firebaseRefs['notes'] !== undefined) { this.unbind('notes'); }
+
+            var firebaseRef = new Firebase('https://lostlandApp.firebaseio.com/notes/' + this.state.releaseGroupMBID);
 
             this.bindAsArray(firebaseRef.limitToLast(25), 'notes');
           }
